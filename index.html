@@ -14,7 +14,7 @@
     
     <style>
         body {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Press+Start+2P', monospace;
             overflow: hidden;
             background-color: #000;
             /* Previene el "bounce" en iOS */
@@ -64,13 +64,15 @@
         /* * NUEVO: Contenedor para los controles táctiles */
         #touch-controls {
             position: absolute;
-            bottom: 0;
+            /* * MODIFICADO: Subido 1.5rem (24px) del borde inferior */
+            bottom: 1.5rem;
             left: 0;
             right: 0;
             z-index: 100;
             display: flex;
             justify-content: space-between;
-            padding: 1rem;
+            /* * MODIFICADO: Padding ajustado */
+            padding: 0.5rem 1rem;
             /* Ocultar en escritorio (md y superior) */
             @media (min-width: 768px) {
                 display: none;
@@ -79,42 +81,34 @@
 
         /* * NUEVO: Estilo de los botones táctiles */
         .touch-btn {
-            background-color: rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 1.5rem;
             color: white;
+            /* * MODIFICADO: Tamaño de fuente más pequeño */
+            font-size: 1.25rem;
+            border-radius: 50%; /* Círculos */
+            /* * MODIFICADO: Botones más pequeños */
+            width: 55px;
+            height: 55px;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Previene la selección de texto al tocar */
-            user-select: none;
-            -webkit-user-select: none;
+            /* * MODIFICADO: Margen entre botones reducido */
+            margin: 0 0.25rem;
+            user-select: none; /* Evita la selección de texto */
+            -webkit-tap-highlight-color: transparent; /* Evita el destello en el toque */
         }
-
-        /* * NUEVO: Botones de acción más grandes */
-        .touch-action-btn {
-            width: 72px;
-            height: 72px;
-            font-size: 2rem;
-        }
-
-        #left-controls, #right-controls {
-            display: flex;
-            gap: 0.5rem;
-            align-items: flex-end;
+        
+        .touch-btn:active {
+            background-color: rgba(255, 255, 255, 0.4);
         }
     </style>
 </head>
 <body class="bg-black text-white overflow-hidden">
 
-    <!-- * MODIFICADO: Contenedor relativo para posicionar los controles táctiles -->
-    <div id="game-container" class="w-screen h-screen flex flex-col items-center justify-center relative">
+    <div id="game-container" class="w-screen h-screen flex flex-col items-center justify-center">
 
-        <!-- * MODIFICADO: UI con texto responsivo -->
-        <div id="ui-bar" class="w-full max-w-4xl p-4 flex justify-between text-base sm:text-lg md:text-2xl">
+        <div id="ui-bar" class="w-full max-w-4xl p-2 md:p-4 flex justify-between text-base md:text-2xl">
             <div>
                 <span>PUNTOS: </span>
                 <span id="score" class="text-yellow-400">0</span>
@@ -129,38 +123,40 @@
 
         <div id="reload-message" class="status-message">RECARGANDO...</div>
 
-        <!-- * NUEVO: Controles Táctiles -->
-        <div id="touch-controls">
-            <!-- Controles de la izquierda (Movimiento) -->
-            <div id="left-controls" class="flex gap-2">
-                <button id="touch-left" class="touch-btn">◀</button>
-                <button id="touch-right" class="touch-btn">▶</button>
-                <button id="touch-crouch" class="touch-btn">▼</button>
-            </div>
-            <!-- Controles de la derecha (Acción) -->
-            <div id="right-controls" class="flex gap-2">
-                <button id="touch-reload" class="touch-btn">R</button>
-                <button id="touch-jump" class="touch-btn touch-action-btn">▲</button>
-                <button id="touch-shoot" class="touch-btn touch-action-btn text-red-400">¡!</button>
-            </div>
-        </div>
-
-        <!-- * MODIFICADO: Texto de inicio actualizado -->
         <div id="start-screen" class="screen-overlay">
-            <h1 class="text-4xl md:text-6xl text-red-600 mb-8">FORTALEZA DE AÑICOS</h1>
-            <p class="text-lg mb-4">¡Defiende la barricada!</p>
-            <p class="text-base mb-8 hidden md:block">(Usa [A][D] para moverte, [S] para agacharte, [CTRL] para saltar, [ESPACIO] para disparar, [R] para recargar)</p>
-            <p class="text-base mb-8 md:hidden">(Usa los controles táctiles en pantalla)</p>
-            <button id="start-button" class="bg-yellow-400 text-black text-2xl py-3 px-6 rounded hover:bg-yellow-300">INICIAR JUEGO</button>
+            <h1 class="text-3xl md:text-6xl text-red-600 mb-8">FORTALEZA DE AÑICOS</h1>
+            <p class="text-sm md:text-xl mb-2">Usa [A] [D] o [Flechas] para moverte.</p>
+            <p class="text-sm md:text-xl mb-2">Usa [S] o [Flecha Abajo] para agacharte.</p>
+            <p class="text-sm md:text-xl mb-2">Usa [CTRL] para saltar.</p>
+            <p class="text-sm md:text-xl mb-2">Usa [ESPACIO] para disparar.</p>
+            <p class="text-sm md:text-xl mb-6">Usa [R] para recargar.</p>
+            <button id="start-button" class="bg-yellow-400 text-black text-lg md:text-2xl py-2 px-4 md:py-3 md:px-6 rounded hover:bg-yellow-300">INICIAR JUEGO</button>
         </div>
 
         <div id="game-over-screen" class="screen-overlay" style="display: none;">
-            <h2 class="text-5xl text-red-600 mb-8">FIN DEL JUEGO</h2>
-            <p class="text-2xl mb-4">PUNTUACIÓN FINAL: <span id="final-score" class="text-yellow-400">0</span></p>
-            <button id="restart-button" class="bg-yellow-400 text-black text-2xl py-3 px-6 rounded hover:bg-yellow-300">REINICIAR</button>
+            <h2 class="text-3xl md:text-5xl text-red-600 mb-8">FIN DEL JUEGO</h2>
+            <p class="text-lg md:text-2xl mb-4">PUNTUACIÓN FINAL: <span id="final-score" class="text-yellow-400">0</span></p>
+            <button id="restart-button" class="bg-yellow-400 text-black text-lg md:text-2xl py-2 px-4 md:py-3 md:px-6 rounded hover:bg-yellow-300">REINICIAR</button>
         </div>
 
-    </div>
+        <!-- * HTML RESTAURADO: Controles táctiles -->
+        <div id="touch-controls" class="w-full">
+            <!-- Controles de Movimiento (Izquierda) -->
+            <div class="flex items-center">
+                <button id="touch-left" class="touch-btn">◀</button>
+                <button id="touch-crouch" class="touch-btn">▼</button>
+                <button id="touch-right" class="touch-btn">▶</button>
+            </div>
+            <!-- Controles de Acción (Derecha) -->
+            <div class="flex items-center">
+                <button id="touch-reload" class="touch-btn">R</button>
+                <button id="touch-shoot" class="touch-btn text-red-500 font-bold">¡!</button>
+                <button id="touch-jump" class="touch-btn">▲</button>
+            </div>
+        </div>
+        <!-- FIN Controles táctiles -->
+
+    </div> <!-- Fin de game-container -->
 
     <!-- * NUEVO: Elemento de Audio para la música de fondo -->
     <audio id="bg-music" src="https://archive.org/download/tvtunes_30300/He-Man%20-%20Mistery.mp3" loop crossorigin="anonymous"></audio>
@@ -251,14 +247,13 @@
                 element.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     keys[keyName] = true;
-                    // No lo ponemos en 'false' aquí, la lógica del juego lo hará
                 }, { passive: false });
 
                 // Aunque la lógica del juego lo ponga en 'false',
                 // nos aseguramos de que se limpie al soltar
                 element.addEventListener('touchend', (e) => {
                     e.preventDefault();
-                    // keys[keyName] = false; // La lógica de 'handleInput' ya lo hace
+                    // La lógica de 'handleInput' ya se encarga de ponerlo en 'false'
                 }, { passive: false });
             }
 
