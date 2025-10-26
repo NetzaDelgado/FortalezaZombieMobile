@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- * NUEVO: Viewport para móviles, deshabilita zoom de usuario -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Fortaleza de Añicos</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+            background-color: #000;
+            /* Previene el "bounce" en iOS */
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        canvas {
+            background-color: #1a1a1a;
+            border-bottom: 5px solid #444;
+            /* * MODIFICADO: Canvas responsivo */
+            width: 100%;
+            height: auto;
+            max-width: 1024px; /* Mantiene la proporción en pantallas grandes */
+            image-rendering: auto; /* Gráficos suaves */
+        }
+        
+        .status-message {
+            display: none;
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FFFF00;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px #000;
+            z-index: 100;
+        }
+
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        /* * NUEVO: Contenedor para los controles táctiles */
+        #touch-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem;
+            /* Ocultar en escritorio (md y superior) */
+            @media (min-width: 768px) {
+                display: none;
+            }
+        }
+
+        /* * NUEVO: Estilo de los botones táctiles */
+        .touch-btn {
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Previene la selección de texto al tocar */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* * NUEVO: Botones de acción más grandes */
+        .touch-action-btn {
+            width: 72px;
+            height: 72px;
+            font-size: 2rem;
+        }
+
+        #left-controls, #right-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+    </style>
+</head>
+<body class="bg-black text-white overflow-hidden">
+
+    <!-- * MODIFICADO: Contenedor relativo para posicionar los controles táctiles -->
+    <div id="game-container" class="w-screen h-screen flex flex-col items-center justify-center relative">
+
+        <!-- * MODIFICADO: UI con texto responsivo -->
+        <div id="ui-bar" class="w-full max-w-4xl p-4 flex justify-between text-base sm:text-lg md:text-2xl">
+            <div>
+                <span>PUNTOS: </span>
+                <span id="score" class="text-yellow-400">0</span>
+            </div>
+            <div>
+                <span>MUNICIÓN: </span>
+                <span id="ammo" class="text-red-500">8</span>
+            </div>
+        </div>
+
+        <canvas id="game-canvas" width="1024" height="576"></canvas>
+
+        <div id="reload-message" class="status-message">RECARGANDO...</div>
+
+        <!-- * NUEVO: Controles Táctiles -->
+        <div id="touch-controls">
+            <!-- Controles de la izquierda (Movimiento) -->
+            <div id="left-controls" class="flex gap-2">
+                <button id="touch-left" class="touch-btn">◀</button>
+                <button id="touch-right" class="touch-btn">▶</button>
+                <button id="touch-crouch" class="touch-btn">▼</button>
+            </div>
+            <!-- Controles de la derecha (Acción) -->
+            <div id="right-controls" class="flex gap-2">
+                <button id="touch-reload" class="touch-btn">R</button>
+                <button id="touch-jump" class="touch-btn touch-action-btn">▲</button>
+                <button id="touch-shoot" class="touch-btn touch-action-btn text-red-400">¡!</button>
+            </div>
+        </div>
+
+        <!-- * MODIFICADO: Texto de inicio actualizado -->
+        <div id="start-screen" class="screen-overlay">
+            <h1 class="text-4xl md:text-6xl text-red-600 mb-8">FORTALEZA DE AÑICOS</h1>
+            <p class="text-lg mb-4">¡Defiende la barricada!</p>
+            <p class="text-base mb-8 hidden md:block">(Usa [A][D] para moverte, [S] para agacharte, [CTRL] para saltar, [ESPACIO] para disparar, [R] para recargar)</p>
+            <p class="text-base mb-8 md:hidden">(Usa los controles táctiles en pantalla)</p>
+            <button id="start-button" class="bg-yellow-400 text-black text-2xl py-3 px-6 rounded hover:bg-yellow-300">INICIAR JUEGO</button>
+        </div>
+
+        <div id="game-over-screen" class="screen-overlay" style="display: none;">
+            <h2 class="text-5xl text-red-600 mb-8">FIN DEL JUEGO</h2>
+            <p class="text-2xl mb-4">PUNTUACIÓN FINAL: <span id="final-score" class="text-yellow-400">0</span></p>
+            <button id="restart-button" class="bg-yellow-400 text-black text-2xl py-3 px-6 rounded hover:bg-yellow-300">REINICIAR</button>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('game-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // --- Elementos de la UI ---
+            const scoreEl = document.getElementById('score');
+            const ammoEl = document.getElementById('ammo');
+            const reloadMessageEl = document.getElementById('reload-message');
+            const startScreenEl = document.getElementById('start-screen');
+            const gameOverScreenEl = document.getElementById('game-over-screen');
+            const startButton = document.getElementById('start-button');
+            const restartButton = document.getElementById('restart-button');
+            const finalScoreEl = document.getElementById('final-score');
+            
+            // --- * NUEVO: Botones Táctiles ---
+            const touchLeft = document.getElementById('touch-left');
+            const touchRight = document.getElementById('touch-right');
+            const touchCrouch = document.getElementById('touch-crouch');
+            const touchJump = document.getElementById('touch-jump');
+            const touchShoot = document.getElementById('touch-shoot');
+            const touchReload = document.getElementById('touch-reload');
+
+            // --- Configuración del Juego ---
+            const FLOOR_Y = canvas.height - 5; 
+            const PLAYER_X_INITIAL = 100;
+            const PLAYER_HEIGHT_STANDING = 80;
+            const PLAYER_HEIGHT_CROUCHING = 40;
+            const PLAYER_WIDTH = 25;
+            const BOX_SIZE = 60;
+            const BARRICADE_OFFSET_FROM_PLAYER = 150;
+            let BARRICADE_X;
+            const PLAYER_SPEED = 3;
+            const GRAVITY = 0.5;
+            const JUMP_STRENGTH = -12;
+
+            // --- Variables de Estado ---
+            let player;
+            let barricade;
+            let zombies;
+            let particles;
+            let activeShots;
+            let ammo;
+            let score;
+            let isReloading;
+            let reloadTimer;
+            let keys = {}; // Objeto que simula las teclas presionadas
+            let gameOver;
+            let gameLoopId;
+            let zombieSpawnTimer;
+            let zombieSpawnInterval;
+
+            // --- Input Handlers (Teclado) ---
+            document.addEventListener('keydown', (e) => { keys[e.key] = true; });
+            document.addEventListener('keyup', (e) => { keys[e.key] = false; });
+            startButton.addEventListener('click', startGame);
+            restartButton.addEventListener('click', startGame);
+
+            // --- * NUEVO: Input Handlers (Táctil) ---
+            
+            // Función para botones de "mantener presionado" (movimiento)
+            function setupHoldButton(element, keyName) {
+                element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    keys[keyName] = true;
+                }, { passive: false });
+                
+                element.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    keys[keyName] = false;
+                }, { passive: false });
+                
+                element.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    keys[keyName] = false;
+                }, { passive: false });
+            }
+
+            // Función para botones de "un solo toque" (acciones)
+            function setupTapButton(element, keyName) {
+                element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    keys[keyName] = true;
+                    // No lo ponemos en 'false' aquí, la lógica del juego lo hará
+                }, { passive: false });
+
+                // Aunque la lógica del juego lo ponga en 'false',
+                // nos aseguramos de que se limpie al soltar
+                element.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    // keys[keyName] = false; // La lógica de 'handleInput' ya lo hace
+                }, { passive: false });
+            }
+
+            // Asignar eventos a los botones
+            setupHoldButton(touchLeft, 'a');
+            setupHoldButton(touchRight, 'd');
+            setupHoldButton(touchCrouch, 's');
+            
+            setupTapButton(touchJump, 'Control');
+            setupTapButton(touchShoot, ' ');
+            setupTapButton(touchReload, 'r');
+
+            // --- Funciones Principales del Juego ---
+
+            function init() {
+                BARRICADE_X = PLAYER_X_INITIAL + BARRICADE_OFFSET_FROM_PLAYER;
+                player = {
+                    x: PLAYER_X_INITIAL,
+                    y: FLOOR_Y - PLAYER_HEIGHT_STANDING,
+                    width: PLAYER_WIDTH,
+                    height: PLAYER_HEIGHT_STANDING,
+                    state: 'standing',
+                    vy: 0,
+                    isOnGround: true
+                };
+                barricade = [
+                    { x: BARRICADE_X, y: FLOOR_Y - BOX_SIZE, width: BOX_SIZE, height: BOX_SIZE, hp: 100 },
+                    { x: BARRICADE_X, y: FLOOR_Y - (BOX_SIZE * 2), width: BOX_SIZE, height: BOX_SIZE, hp: 100 },
+                    { x: BARRICADE_X + BOX_SIZE, y: FLOOR_Y - BOX_SIZE, width: BOX_SIZE, height: BOX_SIZE, hp: 100 },
+                ];
+                zombies = [];
+                particles = [];
+                activeShots = [];
+                ammo = 8;
+                score = 0;
+                isReloading = false;
+                gameOver = false;
+                zombieSpawnInterval = 3000; 
+                zombieSpawnTimer = zombieSpawnInterval;
+
+                scoreEl.textContent = score;
+                ammoEl.textContent = ammo;
+                reloadMessageEl.style.display = 'none';
+                gameOverScreenEl.style.display = 'none';
+                startScreenEl.style.display = 'none';
+            }
+
+            function startGame() {
+                init();
+                if (gameLoopId) {
+                    cancelAnimationFrame(gameLoopId);
+                }
+                gameLoop();
+            }
+
+            function endGame() {
+                gameOver = true;
+                cancelAnimationFrame(gameLoopId);
+                clearTimeout(reloadTimer);
+                finalScoreEl.textContent = score;
+                gameOverScreenEl.style.display = 'flex';
+            }
+
+            // --- Lógica de Actualización (Update) ---
+
+            // * MODIFICADO: Lógica de 'handleInput' mejorada para 'soltar' el botón
+            function handleInput() {
+                if (gameOver) return;
+
+                // --- Agacharse ---
+                if ((keys['s'] || keys['ArrowDown']) && player.isOnGround) {
+                    player.state = 'crouching';
+                    player.y = FLOOR_Y - PLAYER_HEIGHT_CROUCHING;
+                    player.height = PLAYER_HEIGHT_CROUCHING;
+                    if (isReloading) {
+                        clearTimeout(reloadTimer);
+                        isReloading = false;
+                        reloadMessageEl.style.display = 'none';
+                    }
+                } else if (player.state === 'crouching' && !(keys['s'] || keys['ArrowDown'])) {
+                    // Si soltó el botón de agacharse, se para
+                    player.state = 'standing';
+                    player.height = PLAYER_HEIGHT_STANDING;
+                    // Ajusta la 'y' para que no se "hunda" al pararse
+                    player.y = FLOOR_Y - PLAYER_HEIGHT_STANDING; 
+                }
+
+                if (player.state === 'crouching') return; // No moverse ni saltar agachado
+
+                // --- Movimiento Horizontal ---
+                if (keys['a'] || keys['ArrowLeft']) {
+                    player.x -= PLAYER_SPEED;
+                    player.x = Math.max(0, player.x);
+                }
+                if (keys['d'] || keys['ArrowRight']) {
+                    player.x += PLAYER_SPEED;
+                    player.x = Math.min(BARRICADE_X + BOX_SIZE - player.width, player.x);
+                }
+                
+                // --- Salto ---
+                if (keys['Control'] && player.isOnGround) {
+                    player.vy = JUMP_STRENGTH;
+                    player.isOnGround = false;
+                    player.state = 'standing'; 
+                    player.height = PLAYER_HEIGHT_STANDING;
+                    keys['Control'] = false; // Acción de un solo toque
+                }
+
+                if (keys[' ']) {
+                    shoot();
+                    keys[' '] = false; // Acción de un solo toque
+                }
+
+                if (keys['r']) {
+                    reload();
+                    keys['r'] = false; // Acción de un solo toque
+                }
+            }
+            
+            function shoot() {
+                if (isReloading || player.state === 'crouching' || ammo <= 0) {
+                    return;
+                }
+
+                ammo--;
+                ammoEl.textContent = ammo;
+                
+                const shotOriginX = player.x + PLAYER_WIDTH;
+                const shotOriginY = player.y + PLAYER_HEIGHT_STANDING / 2;
+                const shotWidth = 400; 
+                const shotHeight = 80; 
+
+                activeShots.push({
+                    x: shotOriginX,
+                    y: shotOriginY - shotHeight / 2,
+                    width: shotWidth,
+                    height: shotHeight,
+                    lifespan: 10,
+                    maxLifespan: 10
+                });
+
+                // Colisión del disparo
+                for (let i = zombies.length - 1; i >= 0; i--) {
+                    const z = zombies[i];
+                    if (z.x > shotOriginX + shotWidth) continue; 
+
+                    let hit = false;
+                    for (const comp of z.components) {
+                        if (comp.hp <= 0) continue; 
+
+                        const compX = z.x + comp.x;
+                        const compY = z.y + comp.y;
+
+                        if (compX < shotOriginX + shotWidth &&
+                            compX + comp.width > shotOriginX &&
+                            compY < shotOriginY + shotHeight / 2 && 
+                            compY + comp.height > shotOriginY - shotHeight / 2)
+                        {
+                            comp.hp -= 35; 
+                            hit = true;
+                            if (comp.hp <= 0) {
+                                createParticles(compX, compY, comp.width, comp.height);
+                                
+                                if (comp.name === 'leg') {
+                                    z.speed *= 0.5; 
+                                }
+                                if (comp.name === 'head' || comp.name === 'torso' || comp.name === 'arm') {
+                                    z.isDead = true; 
+                                }
+                                score += 10;
+                            }
+                        }
+                    }
+                    if (hit && z.isDead) {
+                        zombies.splice(i, 1);
+                        score += 50; 
+                        scoreEl.textContent = score;
+                    }
+                }
+            }
+
+            function reload() {
+                if (isReloading || ammo === 8 || player.state === 'crouching') {
+                    return;
+                }
+
+                isReloading = true;
+                reloadMessageEl.style.display = 'block';
+                
+                reloadTimer = setTimeout(() => {
+                    ammo = 8;
+                    ammoEl.textContent = ammo;
+                    isReloading = false;
+                    reloadMessageEl.style.display = 'none';
+                }, 2000); 
+            }
+
+            function createZombie() {
+                const zombieHeight = 80; 
+                const zombieWidth = 30; 
+                const y = FLOOR_Y - zombieHeight;
+                const x = canvas.width + Math.random() * 100;
+
+                zombies.push({
+                    x: x,
+                    y: y,
+                    width: zombieWidth,
+                    height: zombieHeight,
+                    speed: 0.5 + Math.random() * 0.5 + (score / 5000), 
+                    isDead: false,
+                    isAttacking: false,
+                    components: [
+                        { name: 'head', x: 5, y: 0, width: 20, height: 20, hp: 25, color: '#C0EBC0' },
+                        { name: 'torso', x: 0, y: 20, width: 30, height: 30, hp: 50, color: '#508D50' },
+                        { name: 'leg', x: 4, y: 50, width: 10, height: 30, hp: 30, color: '#405D40' },
+                        { name: 'leg', x: 16, y: 50, width: 10, height: 30, hp: 30, color: '#405D40' },
+                        { name: 'arm', x: -6, y: 22, width: 6, height: 25, hp: 20, color: '#508D50' },
+                        { name: 'arm', x: 30, y: 22, width: 6, height: 25, hp: 20, color: '#508D50' }
+                    ]
+                });
+            }
+            
+            function updatePlayer(deltaTime) {
+                // La lógica de agacharse/pararse ya está en 'handleInput'
+                
+                if (player.state === 'crouching') {
+                    player.vy = 0;
+                    player.isOnGround = true;
+                    return; 
+                }
+
+                player.height = PLAYER_HEIGHT_STANDING;
+
+                player.vy += GRAVITY;
+                player.y += player.vy;
+                player.isOnGround = false; 
+
+                if (player.y + player.height >= FLOOR_Y) {
+                    player.y = FLOOR_Y - player.height;
+                    player.vy = 0;
+                    player.isOnGround = true;
+                }
+
+                for (const box of barricade) {
+                    if (box.hp <= 0) continue;
+
+                    const hOverlap = player.x < box.x + box.width && player.x + player.width > box.x;
+                    const prevBottom = (player.y - player.vy) + player.height;
+                    const currBottom = player.y + player.height;
+
+                    if (hOverlap && player.vy > 0 && prevBottom <= box.y && currBottom >= box.y) {
+                        player.y = box.y - player.height; 
+                        player.vy = 0;
+                        player.isOnGround = true;
+                        break; 
+                    }
+                }
+            }
+
+
+            function updateZombies(deltaTime) {
+                zombieSpawnTimer -= deltaTime;
+                if (zombieSpawnTimer <= 0) {
+                    createZombie();
+                    zombieSpawnTimer = zombieSpawnInterval;
+                    if (zombieSpawnInterval > 500) {
+                        zombieSpawnInterval -= 20;
+                    }
+                }
+
+                for (let i = zombies.length - 1; i >= 0; i--) {
+                    const z = zombies[i];
+                    z.isAttacking = false;
+
+                    let blocked = false;
+                    for (const box of barricade) {
+                        if (box.hp > 0 && z.x < box.x + box.width && z.x + z.width > box.x) {
+                            if(z.y + z.height > box.y && z.y < box.y + box.height) {
+                                blocked = true;
+                                if (!(player.isOnGround && player.y < box.y && player.x + player.width > box.x && player.x < box.x + box.width)) {
+                                     z.isAttacking = true;
+                                     box.hp -= 0.1; 
+                                }
+                            }
+                        }
+                    }
+
+                    if (!blocked) {
+                        const hOverlap = z.x < player.x + player.width && z.x + z.width > player.x;
+                        const vOverlap = z.y < player.y + player.height && z.y + z.height > player.y;
+
+                        if (hOverlap && vOverlap) { 
+                            endGame();
+                            return;
+                        }
+                    }
+
+                    if (!z.isAttacking) {
+                        z.x -= z.speed;
+                    }
+                }
+            }
+
+            function createParticles(x, y, w, h) {
+                for (let i = 0; i < 20; i++) {
+                    particles.push({
+                        x: x + Math.random() * w,
+                        y: y + Math.random() * h,
+                        vx: (Math.random() - 0.4) * 4, 
+                        vy: (Math.random() - 0.5) * 5, 
+                        size: Math.random() * 4 + 1, 
+                        color: `rgba(220, 230, 255, ${Math.random() * 0.5 + 0.4})`, 
+                        lifespan: 120 
+                    });
+                }
+            }
+
+            function updateParticles() {
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.1; 
+                    p.lifespan--;
+                    if (p.lifespan <= 0) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+
+            function updateActiveShots() {
+                for (let i = activeShots.length - 1; i >= 0; i--) {
+                    const shot = activeShots[i];
+                    shot.lifespan--;
+                    if (shot.lifespan <= 0) {
+                        activeShots.splice(i, 1);
+                    }
+                }
+            }
+
+            // --- Lógica de Dibujo (Draw) ---
+
+            function drawPlayer() {
+                ctx.save();
+                if (player.state === 'standing') {
+                    ctx.fillStyle = '#303080'; 
+                    ctx.fillRect(player.x, player.y + 45, 10, 35); 
+                    ctx.fillRect(player.x + 15, player.y + 45, 10, 35); 
+                    ctx.fillStyle = '#5050FF'; 
+                    ctx.fillRect(player.x - 2, player.y + 15, 29, 30);
+                    ctx.fillStyle = '#FFC0A0';
+                    ctx.fillRect(player.x + 7, player.y, 11, 15);
+                    
+                    ctx.fillStyle = '#402010'; 
+                    ctx.fillRect(player.x + 10, player.y + 25, 25, 8); 
+                    ctx.fillStyle = '#555'; 
+                    ctx.fillRect(player.x + 35, player.y + 27, 20, 4); 
+                } else { // 'crouching'
+                    ctx.fillStyle = '#303080'; 
+                    ctx.fillRect(player.x, player.y + 10, 25, 30);
+                    ctx.fillStyle = '#FFC0A0';
+                    ctx.fillRect(player.x + 7, player.y, 11, 10);
+                    
+                    ctx.fillStyle = '#402010';
+                    ctx.fillRect(player.x + 10, player.y + 15, 25, 8);
+                    ctx.fillStyle = '#555';
+                    ctx.fillRect(player.x + 35, player.y + 17, 20, 4);
+                }
+                ctx.restore();
+            }
+            
+            function drawBarricade() {
+                for (const box of barricade) {
+                    if (box.hp > 0) {
+                        const healthPercent = box.hp / 100;
+                        const g = Math.floor(160 * healthPercent);
+                        const b = Math.floor(100 * healthPercent);
+                        ctx.fillStyle = `rgb(180, ${g}, ${b})`;
+                        ctx.fillRect(box.x, box.y, box.width, box.height);
+                        ctx.strokeStyle = '#000';
+                        ctx.strokeRect(box.x, box.y, box.width, box.height);
+                    }
+                }
+            }
+
+            function drawZombies() {
+                for (const z of zombies) {
+                    for (const comp of z.components) {
+                        if (comp.hp > 0) {
+                            ctx.fillStyle = comp.color;
+                            ctx.fillRect(z.x + comp.x, z.y + comp.y, comp.width, comp.height);
+                        }
+                    }
+                }
+            }
+            
+            function drawParticles() {
+                for (const p of particles) {
+                    ctx.fillStyle = p.color; 
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                }
+            }
+            
+            function drawSingleShot(shot) {
+                const opacity = shot.lifespan / shot.maxLifespan; 
+                
+                ctx.fillStyle = `rgba(255, 220, 100, ${opacity * 0.9})`; 
+                ctx.beginPath();
+                ctx.moveTo(shot.x, shot.y + shot.height/2);
+                ctx.lineTo(shot.x + shot.width, shot.y); 
+                ctx.lineTo(shot.x + shot.width, shot.y + shot.height); 
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.9})`;
+                ctx.beginPath();
+                ctx.moveTo(shot.x, shot.y + shot.height/2);
+                ctx.lineTo(shot.x + shot.width * 0.7, shot.y + shot.height * 0.3); 
+                ctx.lineTo(shot.x + shot.width * 0.7, shot.y + shot.height * 0.7); 
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // --- Game Loop ---
+            let lastTime = 0;
+            function gameLoop(timestamp = 0) {
+                if (gameOver) return;
+
+                const deltaTime = timestamp - lastTime;
+                lastTime = timestamp;
+
+                handleInput();
+                updatePlayer(deltaTime);
+                updateZombies(deltaTime);
+                updateParticles();
+                updateActiveShots();
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height); 
+                drawBarricade();
+                drawPlayer();
+                drawZombies();
+                drawParticles();
+                
+                for (const shot of activeShots) {
+                    drawSingleShot(shot);
+                }
+
+                gameLoopId = requestAnimationFrame(gameLoop);
+            }
+        });
+    </script>
+</body>
+</html>
+
