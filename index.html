@@ -162,6 +162,9 @@
 
     </div>
 
+    <!-- * NUEVO: Elemento de Audio para la música de fondo -->
+    <audio id="bg-music" src="https://archive.org/download/tvtunes_30300/He-Man%20-%20Mistery.mp3" loop crossorigin="anonymous"></audio>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const canvas = document.getElementById('game-canvas');
@@ -177,6 +180,9 @@
             const restartButton = document.getElementById('restart-button');
             const finalScoreEl = document.getElementById('final-score');
             
+            // --- * NUEVO: Elemento de Audio ---
+            const bgMusic = document.getElementById('bg-music');
+
             // --- * NUEVO: Botones Táctiles ---
             const touchLeft = document.getElementById('touch-left');
             const touchRight = document.getElementById('touch-right');
@@ -302,6 +308,12 @@
 
             function startGame() {
                 init();
+                
+                // * NUEVO: Iniciar música
+                bgMusic.currentTime = 0;
+                bgMusic.volume = 0.4; // Volumen moderado
+                bgMusic.play().catch(e => console.warn("La reproducción automática de audio fue bloqueada por el navegador.", e));
+
                 if (gameLoopId) {
                     cancelAnimationFrame(gameLoopId);
                 }
@@ -310,6 +322,10 @@
 
             function endGame() {
                 gameOver = true;
+                
+                // * NUEVO: Detener música
+                bgMusic.pause();
+
                 cancelAnimationFrame(gameLoopId);
                 clearTimeout(reloadTimer);
                 finalScoreEl.textContent = score;
@@ -706,4 +722,5 @@
     </script>
 </body>
 </html>
+
 
