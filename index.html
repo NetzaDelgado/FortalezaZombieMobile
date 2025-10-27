@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- * NUEVO: Viewport para móviles, deshabilita zoom de usuario --><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <!-- * MODIFICADO: Viewport para móviles, deshabilita zoom de usuario -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Fortaleza de Añicos</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -23,7 +24,8 @@
         }
         
         canvas {
-            background-color: #1a1a1a;
+            /* * MODIFICADO: El fondo del canvas se elimina aquí, ya que drawBackground() lo gestiona */
+            /* background-color: #1a1a1a; */
             border-bottom: 5px solid #444;
             /* * MODIFICADO: Canvas responsivo */
             width: 100%;
@@ -60,40 +62,35 @@
             text-align: center;
         }
 
-        /* * NUEVO: Contenedor para los controles táctiles */
+        /* Contenedor para los controles táctiles */
         #touch-controls {
             position: absolute;
-            /* * MODIFICADO: Subido 1.5rem (24px) del borde inferior */
-            bottom: 1.5rem;
+            bottom: 1.5rem; /* Subido 1.5rem (24px) del borde inferior */
             left: 0;
             right: 0;
             z-index: 100;
             display: flex;
             justify-content: space-between;
-            /* * MODIFICADO: Padding ajustado */
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 1rem; /* Padding ajustado */
             /* Ocultar en escritorio (md y superior) */
             @media (min-width: 768px) {
                 display: none;
             }
         }
 
-        /* * NUEVO: Estilo de los botones táctiles */
+        /* Estilo de los botones táctiles */
         .touch-btn {
             background-color: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.5);
             color: white;
-            /* * MODIFICADO: Tamaño de fuente más pequeño */
-            font-size: 1.25rem;
+            font-size: 1.25rem; /* Tamaño de fuente más pequeño */
             border-radius: 50%; /* Círculos */
-            /* * MODIFICADO: Botones más pequeños */
-            width: 55px;
+            width: 55px; /* Botones más pequeños */
             height: 55px;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* * MODIFICADO: Margen entre botones reducido */
-            margin: 0 0.25rem;
+            margin: 0 0.25rem; /* Margen entre botones reducido */
             user-select: none; /* Evita la selección de texto */
             -webkit-tap-highlight-color: transparent; /* Evita el destello en el toque */
         }
@@ -117,13 +114,13 @@
                     <span>MUNICIÓN: </span>
                     <span id="ammo" class="text-red-500">8</span>
                 </div>
-                <!-- * NUEVO: Contador de Granadas -->
+                <!-- Contador de Granadas -->
                 <div>
                     <span>GRANADAS: </span>
                     <span id="grenades" class="text-blue-400">0</span>
                 </div>
             </div>
-             <!-- * NUEVO: Botón de Comprar Granada -->
+             <!-- Botón de Comprar Granada -->
             <div>
                 <button id="buy-grenade" class="text-sm md:text-lg bg-blue-600 px-2 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed" disabled>COMPRAR (2000)</button>
             </div>
@@ -140,7 +137,7 @@
             <p class="text-sm md:text-xl mb-2">Usa [CTRL] para saltar.</p>
             <p class="text-sm md:text-xl mb-2">Usa [ESPACIO] para disparar.</p>
             <p class="text-sm md:text-xl mb-2">Usa [R] para recargar.</p>
-            <!-- * NUEVO: Instrucción de Granada -->
+            <!-- Instrucción de Granada -->
             <p class="text-sm md:text-xl mb-6">Usa [G] para lanzar granada.</p>
             <button id="start-button" class="bg-yellow-400 text-black text-lg md:text-2xl py-2 px-4 md:py-3 md:px-6 rounded hover:bg-yellow-300">INICIAR JUEGO</button>
         </div>
@@ -151,21 +148,29 @@
             <button id="restart-button" class="bg-yellow-400 text-black text-lg md:text-2xl py-2 px-4 md:py-3 md:px-6 rounded hover:bg-yellow-300">REINICIAR</button>
         </div>
 
-        <!-- * HTML RESTAURADO: Controles táctiles --><div id="touch-controls" class="w-full">
-            <!-- Controles de Movimiento (Izquierda) --><div class="flex items-center">
+        <!-- Controles táctiles -->
+        <div id="touch-controls" class="w-full">
+            <!-- Controles de Movimiento (Izquierda) -->
+            <div class="flex items-center">
                 <button id="touch-left" class="touch-btn">◀</button>
                 <button id="touch-crouch" class="touch-btn">▼</button>
                 <button id="touch-right" class="touch-btn">▶</button>
             </div>
-            <!-- Controles de Acción (Derecha) --><div class="flex items-center">
-                <!-- * NUEVO: Botón Táctil de Granada -->
+            <!-- Controles de Acción (Derecha) -->
+            <div class="flex items-center">
+                <!-- Botón Táctil de Granada -->
                 <button id="touch-grenade" class="touch-btn text-blue-400" style="opacity: 0.4;">G</button>
                 <button id="touch-reload" class="touch-btn">R</button>
                 <button id="touch-shoot" class="touch-btn text-red-500 font-bold">¡!</button>
                 <button id="touch-jump" class="touch-btn">▲</button>
             </div>
         </div>
-        <!-- FIN Controles táctiles --></div> <!-- Fin de game-container --><!-- * NUEVO: Elemento de Audio para la música de fondo --><audio id="bg-music" src="https://archive.org/download/tvtunes_30300/He-Man%20-%20Mistery.mp3" loop crossorigin="anonymous"></audio>
+        <!-- FIN Controles táctiles -->
+
+    </div> <!-- Fin de game-container -->
+    
+    <!-- Elemento de Audio para la música de fondo -->
+    <audio id="bg-music" src="https://archive.org/download/tvtunes_30300/He-Man%20-%20Mistery.mp3" loop crossorigin="anonymous"></audio>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -182,7 +187,7 @@
             const restartButton = document.getElementById('restart-button');
             const finalScoreEl = document.getElementById('final-score');
             
-            // --- * NUEVO: Elementos de Granada ---
+            // --- Elementos de Granada ---
             const grenadesEl = document.getElementById('grenades');
             const buyGrenadeButton = document.getElementById('buy-grenade');
             const touchGrenade = document.getElementById('touch-grenade');
@@ -210,7 +215,7 @@
             const PLAYER_SPEED = 3;
             const GRAVITY = 0.5;
             const JUMP_STRENGTH = -12;
-            const GRENADE_COST = 2000; // * NUEVO
+            const GRENADE_COST = 2000;
 
             // --- Variables de Estado ---
             let player;
@@ -228,7 +233,7 @@
             let zombieSpawnTimer;
             let zombieSpawnInterval;
 
-            // * NUEVO: Variables de Granada
+            // Variables de Granada
             let grenades;
             let activeGrenade = null;
             let explosions = [];
@@ -238,7 +243,7 @@
             document.addEventListener('keyup', (e) => { keys[e.key] = false; });
             startButton.addEventListener('click', startGame);
             restartButton.addEventListener('click', startGame);
-            buyGrenadeButton.addEventListener('click', buyGrenade); // * NUEVO
+            buyGrenadeButton.addEventListener('click', buyGrenade);
 
             // --- Input Handlers (Táctil) ---
             
@@ -279,7 +284,7 @@
             setupTapButton(touchJump, 'Control');
             setupTapButton(touchShoot, ' ');
             setupTapButton(touchReload, 'r');
-            setupTapButton(touchGrenade, 'g'); // * NUEVO
+            setupTapButton(touchGrenade, 'g');
 
             // --- Funciones Principales del Juego ---
 
@@ -309,7 +314,7 @@
                 zombieSpawnInterval = 3000; 
                 zombieSpawnTimer = zombieSpawnInterval;
 
-                // * NUEVO: Inicializar granadas
+                // Inicializar granadas
                 grenades = 0;
                 grenadesEl.textContent = grenades;
                 activeGrenade = null;
@@ -321,7 +326,7 @@
                 gameOverScreenEl.style.display = 'none';
                 startScreenEl.style.display = 'none';
                 
-                updateBuyButton(); // * NUEVO
+                updateBuyButton();
             }
 
             function startGame() {
@@ -346,7 +351,7 @@
                 gameOverScreenEl.style.display = 'flex';
             }
 
-            // --- * NUEVO: Lógica de Granadas ---
+            // --- Lógica de Granadas ---
 
             function buyGrenade() {
                 if (score >= GRENADE_COST) {
@@ -478,7 +483,7 @@
                     keys['r'] = false;
                 }
                 
-                // * NUEVO: Input de Granada
+                // Input de Granada
                 if (keys['g']) {
                     launchGrenade();
                     keys['g'] = false;
@@ -543,7 +548,7 @@
                                      }
                                 }
                                 score += 10;
-                                updateBuyButton(); // * NUEVO: Actualizar por si se llegó a 2000
+                                updateBuyButton(); // Actualizar por si se llegó a 2000
                             }
                         }
                     }
@@ -551,7 +556,7 @@
                         zombies.splice(i, 1);
                         score += 50; 
                         scoreEl.textContent = score;
-                        updateBuyButton(); // * NUEVO: Actualizar por si se llegó a 2000
+                        updateBuyButton(); // Actualizar por si se llegó a 2000
                     }
                 }
             }
@@ -732,6 +737,63 @@
 
             // --- Lógica de Dibujo (Draw) ---
 
+            // * NUEVO: Función para dibujar el fondo del almacén
+            function drawBackground() {
+                // 1. Piso del almacén (coincide con el borde inferior del canvas)
+                ctx.fillStyle = '#444';
+                ctx.fillRect(0, FLOOR_Y, canvas.width, canvas.height - FLOOR_Y);
+
+                // 2. Pared trasera del almacén (un color oscuro, tipo ladrillo o concreto)
+                ctx.fillStyle = '#4a2a1a'; // Marrón oscuro rojizo
+                ctx.fillRect(0, 0, canvas.width, FLOOR_Y);
+                
+                // 3. Área del techo (más oscura, con vigas)
+                ctx.fillStyle = '#1a1a1a'; // Casi negro
+                ctx.fillRect(0, 0, canvas.width, 60); // Un área de 60px para el techo
+                
+                // Vigas simples
+                ctx.fillStyle = '#2a2a2a'; // Gris muy oscuro
+                for (let i = 0; i < canvas.width; i += 100) {
+                    ctx.fillRect(i, 0, 10, 60); // Soportes verticales
+                }
+                ctx.fillRect(0, 50, canvas.width, 10); // Viga horizontal principal
+
+                // 4. Ventanas que muestran la noche
+                const windowWidth = 180;
+                const windowHeight = 120;
+                const windowY = 100; // Posición Y desde el techo
+                const windowPositions = [200, 500, 800]; // Posiciones X
+
+                for (const xPos of windowPositions) {
+                    // a. Cielo nocturno (el "cristal")
+                    ctx.fillStyle = '#000020'; // Azul noche muy oscuro
+                    ctx.fillRect(xPos, windowY, windowWidth, windowHeight);
+
+                    // b. Estrellas
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(xPos + 30, windowY + 40, 3, 3);
+                    ctx.fillRect(xPos + 90, windowY + 20, 2, 2);
+                    ctx.fillRect(xPos + 150, windowY + 60, 3, 3);
+                    ctx.fillRect(xPos + 60, windowY + 80, 2, 2);
+
+                    // c. Marco de la ventana y paneles
+                    ctx.strokeStyle = '#303030'; // Marco oscuro
+                    ctx.lineWidth = 8;
+                    
+                    // Marco exterior
+                    ctx.strokeRect(xPos, windowY, windowWidth, windowHeight);
+                    
+                    // Paneles interiores (cruz)
+                    ctx.beginPath();
+                    ctx.moveTo(xPos + windowWidth / 2, windowY); // Vertical
+                    ctx.lineTo(xPos + windowWidth / 2, windowY + windowHeight);
+                    ctx.moveTo(xPos, windowY + windowHeight / 2); // Horizontal
+                    ctx.lineTo(xPos + windowWidth, windowY + windowHeight / 2);
+                    ctx.stroke();
+                }
+            }
+
+
             function drawPlayer() {
                 ctx.save();
                 if (player.state === 'standing') {
@@ -811,7 +873,7 @@
                 ctx.fill();
             }
 
-            // --- * NUEVO: Funciones de Dibujo de Granada/Explosión ---
+            // --- Funciones de Dibujo de Granada/Explosión ---
             function drawActiveGrenade() {
                 if (!activeGrenade) return;
                 ctx.save();
@@ -857,11 +919,15 @@
                 updateZombies(deltaTime);
                 updateParticles();
                 updateActiveShots();
-                updateActiveGrenade(); // * NUEVO
-                updateExplosions(); // * NUEVO
+                updateActiveGrenade();
+                updateExplosions();
 
                 // Dibujar
                 ctx.clearRect(0, 0, canvas.width, canvas.height); 
+
+                // * NUEVO: Dibujar el fondo del almacén primero
+                drawBackground();
+                
                 drawBarricade();
                 drawPlayer();
                 drawZombies();
@@ -871,8 +937,8 @@
                     drawSingleShot(shot);
                 }
                 
-                drawActiveGrenade(); // * NUEVO
-                drawExplosions(); // * NUEVO
+                drawActiveGrenade();
+                drawExplosions();
 
                 gameLoopId = requestAnimationFrame(gameLoop);
             }
